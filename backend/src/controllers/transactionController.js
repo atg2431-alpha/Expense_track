@@ -1,11 +1,11 @@
 const storage = require('../services/storage');
 
-const getTransactions = (req, res) => {
-  const transactions = storage.getTransactions();
+const getTransactions = async (req, res) => {
+  const transactions = await storage.getTransactions();
   res.json(transactions);
 };
 
-const createTransaction = (req, res) => {
+const createTransaction = async (req, res) => {
   const { type, amount, category, description, date } = req.body;
 
   if (!type || !amount) {
@@ -18,13 +18,17 @@ const createTransaction = (req, res) => {
     return res.status(400).json({ error: 'amount must be a positive number' });
   }
 
-  const transaction = storage.addTransaction({ type, amount, category, description, date });
-  res.status(201).json(transaction);
+  try {
+    const transaction = await storage.addTransaction({ type, amount, category, description, date });
+    res.status(201).json(transaction);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 };
 
-const deleteTransaction = (req, res) => {
+const deleteTransaction = async (req, res) => {
   const { id } = req.params;
-  const removed = storage.deleteTransaction(id);
+  const removed = await storage.deleteTransaction(id);
   if (!removed) {
     return res.status(404).json({ error: 'Transaction not found' });
   }
