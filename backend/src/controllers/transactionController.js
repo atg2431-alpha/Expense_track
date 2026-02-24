@@ -1,0 +1,34 @@
+const storage = require('../services/storage');
+
+const getTransactions = (req, res) => {
+  const transactions = storage.getTransactions();
+  res.json(transactions);
+};
+
+const createTransaction = (req, res) => {
+  const { type, amount, category, description, date } = req.body;
+
+  if (!type || !amount) {
+    return res.status(400).json({ error: 'type and amount are required' });
+  }
+  if (!['income', 'expense'].includes(type)) {
+    return res.status(400).json({ error: 'type must be "income" or "expense"' });
+  }
+  if (isNaN(parseFloat(amount)) || parseFloat(amount) <= 0) {
+    return res.status(400).json({ error: 'amount must be a positive number' });
+  }
+
+  const transaction = storage.addTransaction({ type, amount, category, description, date });
+  res.status(201).json(transaction);
+};
+
+const deleteTransaction = (req, res) => {
+  const { id } = req.params;
+  const removed = storage.deleteTransaction(id);
+  if (!removed) {
+    return res.status(404).json({ error: 'Transaction not found' });
+  }
+  res.json({ message: 'Transaction deleted', transaction: removed });
+};
+
+module.exports = { getTransactions, createTransaction, deleteTransaction };
