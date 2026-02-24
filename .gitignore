@@ -24,3 +24,6 @@ npm-debug.log*
 # OS
 .DS_Store
 Thumbs.db
+
+# Persistent data store
+backend/src/services/storage/data.json
