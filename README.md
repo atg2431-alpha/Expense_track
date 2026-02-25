@@ -16,7 +16,7 @@ A full-stack, AI-powered expense tracker with natural language input via Ollama.
 | Frontend | React 18 + Vite, Tailwind CSS v3, Lucide icons |
 | Backend | Node.js + Express |
 | AI | Ollama (local) — model: `llama3.2` |
-| Storage | In-memory (swap `backend/src/services/storage/index.js` for a DB adapter) |
+| Storage | MongoDB (via Mongoose) — configure `MONGO_URI` in `backend/.env` |
 
 ## Project Structure
 
@@ -45,30 +45,44 @@ expense-tracker/
 
 - Node.js 18+
 - [Ollama](https://ollama.com) installed and running (for AI input)
+- A [MongoDB Atlas](https://www.mongodb.com/atlas) free account **or** local MongoDB installed
 
-### 1. Pull the AI model
+### 1. Clone & install all dependencies
+
+```bash
+npm run setup
+```
+
+### 2. Configure MongoDB
+
+Copy the example env file and add your MongoDB connection string:
+
+```bash
+cp backend/.env.example backend/.env
+# Then edit backend/.env and set your MONGO_URI
+```
+
+**Free MongoDB Atlas setup:**
+1. Go to [mongodb.com/atlas](https://www.mongodb.com/atlas) → Create free account
+2. Create a free **M0** cluster
+3. Click **Connect** → **Drivers** → copy the connection string
+4. Paste it into `backend/.env` as `MONGO_URI=...`
+
+> For local development, if you have MongoDB installed locally, the default `mongodb://localhost:27017/expense_tracker` will be used automatically — no `.env` needed.
+
+### 3. Pull the AI model
 
 ```bash
 ollama pull llama3.2
 ```
 
-### 2. Start the backend
+### 4. Start everything with one command
 
 ```bash
-cd backend
-npm install
 npm run dev
-# API running on http://localhost:3001
 ```
 
-### 3. Start the frontend
-
-```bash
-cd frontend
-npm install
-npm run dev
-# App running on http://localhost:5173
-```
+This starts both the backend (http://localhost:3001) and frontend (http://localhost:5173) simultaneously. The frontend URL will appear in your terminal — open it in your browser.
 
 ## API Endpoints
 

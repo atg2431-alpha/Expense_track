@@ -1,28 +1,29 @@
 const storage = require('../services/storage');
 
-const getCategories = (req, res) => {
-  const categories = storage.getCategories();
+const getCategories = async (req, res) => {
+  const categories = await storage.getCategories();
   res.json(categories);
 };
 
-const createCategory = (req, res) => {
+const createCategory = async (req, res) => {
   const { name, emoji, color } = req.body;
   if (!name || !name.trim()) {
     return res.status(400).json({ error: 'name is required' });
   }
-  const existing = storage.getCategories().find(
-    (c) => c.name.toLowerCase() === name.trim().toLowerCase()
-  );
-  if (existing) {
-    return res.status(409).json({ error: 'Category already exists' });
+  try {
+    const category = await storage.addCategory({ name: name.trim(), emoji, color });
+    res.status(201).json(category);
+  } catch (err) {
+    if (err.code === 11000) {
+      return res.status(409).json({ error: 'Category already exists' });
+    }
+    res.status(500).json({ error: err.message });
   }
-  const category = storage.addCategory({ name: name.trim(), emoji, color });
-  res.status(201).json(category);
 };
 
-const deleteCategory = (req, res) => {
+const deleteCategory = async (req, res) => {
   const { id } = req.params;
-  const removed = storage.deleteCategory(id);
+  const removed = await storage.deleteCategory(id);
   if (!removed) {
     return res.status(404).json({ error: 'Category not found' });
   }
