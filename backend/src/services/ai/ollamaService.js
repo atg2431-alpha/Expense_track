@@ -1,7 +1,7 @@
 const http = require('http');
 
 // ─── Configuration ────────────────────────────────────────────────────────────
-const MODEL_NAME = 'llama3.2';
+const MODEL_NAME = 'deepseek-r1:1.5b';
 const OLLAMA_BASE_URL = 'http://localhost:11434';
 // ──────────────────────────────────────────────────────────────────────────────
 
