@@ -6,6 +6,21 @@ const api = axios.create({
   timeout: 35000,
 });
 
+// Attach JWT to every request
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+// Auth
+export const googleLogin = (idToken, name) =>
+  api.post('/auth/google', { idToken, name }).then((r) => r.data);
+export const getMe = () => api.get('/auth/me').then((r) => r.data);
+export const updateMe = (name) => api.put('/auth/me', { name }).then((r) => r.data);
+
 // Transactions
 export const fetchTransactions = () => api.get('/transactions').then((r) => r.data);
 export const createTransaction = (data) => api.post('/transactions', data).then((r) => r.data);

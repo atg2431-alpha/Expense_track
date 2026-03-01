@@ -11,19 +11,20 @@ const DEFAULT_CATEGORIES = [
   { name: 'Other', emoji: '📦', color: '#6b7280' },
 ];
 
-async function seedCategories() {
-  const count = await Category.countDocuments();
+/**
+ * Seed default categories for a specific user (called once on first login).
+ */
+const seedCategoriesForUser = async (userId) => {
+  const count = await Category.countDocuments({ userId });
   if (count === 0) {
-    await Category.insertMany(DEFAULT_CATEGORIES);
+    const docs = DEFAULT_CATEGORIES.map((c) => ({ ...c, userId }));
+    await Category.insertMany(docs);
   }
-}
-
-// Call once on startup
-seedCategories().catch((err) => console.error('Failed to seed categories:', err));
+};
 
 // --- Transactions ---
-const getTransactions = async () => {
-  const txs = await Transaction.find().sort({ createdAt: -1 });
+const getTransactions = async (userId) => {
+  const txs = await Transaction.find({ userId }).sort({ createdAt: -1 });
   return txs.map((t) => ({
     id: t._id.toString(),
     type: t.type,
@@ -35,14 +36,15 @@ const getTransactions = async () => {
   }));
 };
 
-const getTransactionById = async (id) => {
-  const t = await Transaction.findById(id);
+const getTransactionById = async (userId, id) => {
+  const t = await Transaction.findOne({ _id: id, userId });
   if (!t) return null;
   return { id: t._id.toString(), ...t.toObject() };
 };
 
-const addTransaction = async (data) => {
+const addTransaction = async (userId, data) => {
   const t = await Transaction.create({
+    userId,
     type: data.type,
     amount: parseFloat(data.amount),
     category: data.category || 'Other',
@@ -60,15 +62,15 @@ const addTransaction = async (data) => {
   };
 };
 
-const deleteTransaction = async (id) => {
-  const t = await Transaction.findByIdAndDelete(id);
+const deleteTransaction = async (userId, id) => {
+  const t = await Transaction.findOneAndDelete({ _id: id, userId });
   if (!t) return null;
   return { id: t._id.toString(), ...t.toObject() };
 };
 
 // --- Categories ---
-const getCategories = async () => {
-  const cats = await Category.find();
+const getCategories = async (userId) => {
+  const cats = await Category.find({ userId });
   return cats.map((c) => ({
     id: c._id.toString(),
     name: c.name,
@@ -77,14 +79,15 @@ const getCategories = async () => {
   }));
 };
 
-const getCategoryById = async (id) => {
-  const c = await Category.findById(id);
+const getCategoryById = async (userId, id) => {
+  const c = await Category.findOne({ _id: id, userId });
   if (!c) return null;
   return { id: c._id.toString(), name: c.name, emoji: c.emoji, color: c.color };
 };
 
-const addCategory = async (data) => {
+const addCategory = async (userId, data) => {
   const c = await Category.create({
+    userId,
     name: data.name,
     emoji: data.emoji || '📌',
     color: data.color || '#6366f1',
@@ -92,13 +95,14 @@ const addCategory = async (data) => {
   return { id: c._id.toString(), name: c.name, emoji: c.emoji, color: c.color };
 };
 
-const deleteCategory = async (id) => {
-  const c = await Category.findByIdAndDelete(id);
+const deleteCategory = async (userId, id) => {
+  const c = await Category.findOneAndDelete({ _id: id, userId });
   if (!c) return null;
   return { id: c._id.toString(), name: c.name, emoji: c.emoji, color: c.color };
 };
 
 module.exports = {
+  seedCategoriesForUser,
   getTransactions,
   getTransactionById,
   addTransaction,
