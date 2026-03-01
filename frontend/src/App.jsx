@@ -1,11 +1,14 @@
 import { useState, useCallback } from 'react';
-import { LayoutDashboard, ArrowLeftRight, Tag, Sparkles } from 'lucide-react';
+import { LayoutDashboard, ArrowLeftRight, Tag, Sparkles, LogOut, Pencil, Check, X } from 'lucide-react';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { useTransactions } from './hooks/useTransactions';
 import Dashboard from './components/Dashboard/Dashboard';
 import TransactionList from './components/TransactionList/TransactionList';
 import CategoryManager from './components/CategoryManager/CategoryManager';
 import AIInput from './components/AIInput/AIInput';
 import Toast from './components/common/Toast';
+import Spinner from './components/common/Spinner';
+import LoginPage from './components/Auth/LoginPage';
 
 const TABS = [
   { id: 'dashboard', label: 'Dashboard', Icon: LayoutDashboard },
@@ -14,9 +17,12 @@ const TABS = [
   { id: 'ai', label: 'AI Input', Icon: Sparkles },
 ];
 
-export default function App() {
+function MainApp() {
+  const { user, logout, updateName } = useAuth();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [toast, setToast] = useState(null);
+  const [editingName, setEditingName] = useState(false);
+  const [nameInput, setNameInput] = useState('');
 
   const {
     transactions,
@@ -74,6 +80,24 @@ export default function App() {
     setActiveTab('transactions');
   };
 
+  const startEditName = () => {
+    setNameInput(user?.name || '');
+    setEditingName(true);
+  };
+
+  const cancelEditName = () => setEditingName(false);
+
+  const saveName = async () => {
+    if (!nameInput.trim()) return;
+    try {
+      await updateName(nameInput.trim());
+      setEditingName(false);
+      showToast('Name updated!');
+    } catch {
+      showToast('Failed to update name', 'error');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-900">
       {/* Header */}
@@ -90,12 +114,58 @@ export default function App() {
               </div>
             </div>
 
-            {/* Balance pill */}
-            <div className="hidden sm:flex items-center gap-2 bg-slate-800 border border-slate-700/50 rounded-full px-4 py-1.5">
-              <span className="text-xs text-slate-400">Balance</span>
-              <span className={`text-sm font-bold ${totals.balance >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                {totals.balance >= 0 ? '+' : ''}{formatCurrency(totals.balance)}
-              </span>
+            <div className="flex items-center gap-3">
+              {/* Balance pill */}
+              <div className="hidden sm:flex items-center gap-2 bg-slate-800 border border-slate-700/50 rounded-full px-4 py-1.5">
+                <span className="text-xs text-slate-400">Balance</span>
+                <span className={`text-sm font-bold ${totals.balance >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                  {totals.balance >= 0 ? '+' : ''}{formatCurrency(totals.balance)}
+                </span>
+              </div>
+
+              {/* User info */}
+              {user && (
+                <div className="flex items-center gap-2">
+                  {user.picture && (
+                    <img
+                      src={user.picture}
+                      alt={user.name}
+                      className="w-8 h-8 rounded-full border border-slate-700"
+                      referrerPolicy="no-referrer"
+                    />
+                  )}
+                  <div className="hidden sm:flex flex-col">
+                    {editingName ? (
+                      <div className="flex items-center gap-1">
+                        <input
+                          className="bg-slate-800 border border-slate-600 text-white text-xs rounded px-2 py-0.5 w-28 outline-none focus:border-indigo-500"
+                          value={nameInput}
+                          onChange={(e) => setNameInput(e.target.value)}
+                          onKeyDown={(e) => { if (e.key === 'Enter') saveName(); if (e.key === 'Escape') cancelEditName(); }}
+                          autoFocus
+                        />
+                        <button onClick={saveName} className="text-emerald-400 hover:text-emerald-300 p-0.5"><Check size={13} /></button>
+                        <button onClick={cancelEditName} className="text-slate-400 hover:text-slate-300 p-0.5"><X size={13} /></button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-1">
+                        <span className="text-xs text-white font-medium">{user.name}</span>
+                        <button onClick={startEditName} className="text-slate-500 hover:text-slate-300 p-0.5" title="Edit name">
+                          <Pencil size={11} />
+                        </button>
+                      </div>
+                    )}
+                    <span className="text-xs text-slate-500 leading-none">{user.email}</span>
+                  </div>
+                  <button
+                    onClick={logout}
+                    className="text-slate-400 hover:text-red-400 p-2 rounded-lg hover:bg-slate-800 transition-all"
+                    title="Sign out"
+                  >
+                    <LogOut size={16} />
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -160,6 +230,32 @@ export default function App() {
       )}
     </div>
   );
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <AuthGate />
+    </AuthProvider>
+  );
+}
+
+function AuthGate() {
+  const { user } = useAuth();
+
+  if (user === undefined) {
+    return (
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
+        <Spinner />
+      </div>
+    );
+  }
+
+  if (user === null) {
+    return <LoginPage />;
+  }
+
+  return <MainApp />;
 }
 
 function formatCurrency(amount) {

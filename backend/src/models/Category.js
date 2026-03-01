@@ -1,9 +1,12 @@
 const mongoose = require('mongoose');
 
 const categorySchema = new mongoose.Schema({
-  name: { type: String, required: true, unique: true },
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
+  name: { type: String, required: true },
   emoji: { type: String, default: '📌' },
   color: { type: String, default: '#6366f1' },
 });
+
+categorySchema.index({ userId: 1, name: 1 }, { unique: true });
 
 module.exports = mongoose.model('Category', categorySchema);
